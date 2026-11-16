@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Web Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #273549;
+            --border: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --primary: #38bdf8;
+            --primary-dark: #0284c7;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .stat-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        .stat-label { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem; }
+        .stat-val { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            background-color: var(--bg-card);
+            padding: 0.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: #0f172a;
+        }
+
+        .view-content {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.75rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
+        input {
+            background-color: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+
+        button.btn-primary {
+            background-color: var(--primary);
+            color: #0f172a;
+            font-weight: 600;
+            padding: 0.7rem 1.4rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button.btn-primary:hover { background-color: var(--primary-dark); color: #fff; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            text-align: left;
+        }
+        th, td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        th { color: var(--text-secondary); font-weight: 600; background: #162032; }
+        tr:hover td { background-color: var(--bg-card-hover); }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-available { background: rgba(52, 211, 153, 0.15); color: var(--success); }
+        .badge-out { background: rgba(248, 113, 113, 0.15); color: var(--danger); }
+        .badge-issued { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.85rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <span>📚 Library Management System</span>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-secondary);">Web Console Edition</div>
+    </header>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Titles</div>
+                <div class="stat-val" id="stat-total-titles">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Inventory Copies</div>
+                <div class="stat-val" id="stat-total-copies">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Currently Issued</div>
+                <div class="stat-val" id="stat-total-issued" style="color:var(--warning)">0</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('display')">Task 2: All Books</button>
+            <button class="tab-btn" onclick="switchTab('add')">Task 1: Add Book</button>
+            <button class="tab-btn" onclick="switchTab('search')">Task 3: Search Book</button>
+            <button class="tab-btn" onclick="switchTab('circulation')">Task 4 & 5: Issue / Return</button>
+            <button class="tab-btn" onclick="switchTab('issued')">Task 6: Issued Books</button>
+        </div>
+
+        <!-- Task 2: Display All Books -->
+        <div id="view-display" class="view-content">
+            <h2 style="margin-bottom:1rem; font-size:1.15rem;">Registered Books Catalogue</h2>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Book ID</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Year</th>
+                            <th>Available Copies</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="books-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Task 1: Add Book -->
+        <div id="view-add" class="view-content" style="display:none;">
+            <h2 style="margin-bottom:1.25rem; font-size:1.15rem;">Add a New Book Record</h2>
+            <form id="add-book-form" onsubmit="handleAddBook(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Book ID *</label>
+                        <input type="text" id="add-id" placeholder="e.g. B104" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Book Title *</label>
+                        <input type="text" id="add-title" placeholder="e.g. Introduction to Algorithms" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Author Name *</label>
+                        <input type="text" id="add-author" placeholder="e.g. Thomas H. Cormen" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Publication Year *</label>
+                        <input type="number" id="add-year" placeholder="e.g. 2022" required min="1000" max="2026">
+                    </div>
+                    <div class="form-group">
+                        <label>Available Copies *</label>
+                        <input type="number" id="add-copies" placeholder="e.g. 5" required min="0">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Add Book</button>
+            </form>
+        </div>
+
+        <!-- Task 3: Search Book -->
+        <div id="view-search" class="view-content" style="display:none;">
+            <h2 style="margin-bottom:1rem; font-size:1.15rem;">Search Books</h2>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Search by Book ID or Title</label>
+                <input type="text" id="search-input" placeholder="Type title or book ID..." oninput="handleSearch()">
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Book ID</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Year</th>
+                            <th>Available Copies</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="search-results-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Task 4 & 5: Issue / Return -->
+        <div id="view-circulation" class="view-content" style="display:none;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:2rem;">
+                <!-- Issue Section -->
+                <div>
+                    <h2 style="margin-bottom:1rem; font-size:1.15rem; color:var(--primary);">Issue a Book (Task 4)</h2>
+                    <form onsubmit="handleIssueBook(event)">
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label>Book ID *</label>
+                            <input type="text" id="issue-book-id" placeholder="e.g. B101" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label>Student ID *</label>
+                            <input type="text" id="issue-student-id" placeholder="e.g. S1001" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Issue Book</button>
+                    </form>
+                </div>
+
+                <!-- Return Section -->
+                <div>
+                    <h2 style="margin-bottom:1rem; font-size:1.15rem; color:var(--success);">Return a Book (Task 5)</h2>
+                    <form onsubmit="handleReturnBook(event)">
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label>Book ID *</label>
+                            <input type="text" id="return-book-id" placeholder="e.g. B101" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label>Student ID *</label>
+                            <input type="text" id="return-student-id" placeholder="e.g. S1001" required>
+                        </div>
+                        <button type="submit" class="btn-primary" style="background-color:var(--success); color:#0f172a;">Process Return</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task 6: Display Issued Books -->
+        <div id="view-issued" class="view-content" style="display:none;">
+            <h2 style="margin-bottom:1rem; font-size:1.15rem;">Currently Issued Books</h2>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Book ID</th>
+                            <th>Title</th>
+                            <th>Student ID</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="issued-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // State
+        const books = {
+            "B101": { bookId: "B101", title: "Kotlin in Action", author: "Dmitry Jemerov", publicationYear: 2017, availableCopies: 3 },
+            "B102": { bookId: "B102", title: "Clean Code", author: "Robert C. Martin", publicationYear: 2008, availableCopies: 2 },
+            "B103": { bookId: "B103", title: "Design Patterns", author: "Erich Gamma", publicationYear: 1994, availableCopies: 1 }
+        };
+
+        const issueRecords = [
+            { bookId: "B101", studentId: "S202401", status: "ISSUED" }
+        ];
+        books["B101"].availableCopies -= 1;
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById("toast");
+            toast.textContent = msg;
+            toast.style.backgroundColor = isError ? "var(--danger)" : "var(--success)";
+            toast.style.color = "#0f172a";
+            toast.style.display = "block";
+            setTimeout(() => { toast.style.display = "none"; }, 3000);
+        }
+
+        function updateStats() {
+            const bookList = Object.values(books);
+            document.getElementById("stat-total-titles").textContent = bookList.length;
+            const totalCopies = bookList.reduce((acc, b) => acc + b.availableCopies, 0);
+            document.getElementById("stat-total-copies").textContent = totalCopies;
+            const activeIssues = issueRecords.filter(r => r.status === "ISSUED").length;
+            document.getElementById("stat-total-issued").textContent = activeIssues;
+        }
+
+        function renderBooks() {
+            const tbody = document.getElementById("books-table-body");
+            tbody.innerHTML = "";
+            const list = Object.values(books);
+
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">No books in catalogue.</td></tr>';
+                return;
+            }
+
+            list.forEach(b => {
+                const tr = document.createElement("tr");
+                const badgeClass = b.availableCopies > 0 ? "badge-available" : "badge-out";
+                const badgeText = b.availableCopies > 0 ? "In Stock" : "Out of Stock";
+                tr.innerHTML = `
+                    <td style="font-weight:600; color:var(--primary);">${b.bookId}</td>
+                    <td>${b.title}</td>
+                    <td>${b.author}</td>
+                    <td>${b.publicationYear}</td>
+                    <td>${b.availableCopies}</td>
+                    <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateStats();
+        }
+
+        function renderIssuedBooks() {
+            const tbody = document.getElementById("issued-table-body");
+            tbody.innerHTML = "";
+            const active = issueRecords.filter(r => r.status === "ISSUED");
+
+            if (active.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary);">No books are currently issued.</td></tr>';
+                return;
+            }
+
+            active.forEach(rec => {
+                const tr = document.createElement("tr");
+                const title = books[rec.bookId] ? books[rec.bookId].title : "Unknown Title";
+                tr.innerHTML = `
+                    <td style="font-weight:600; color:var(--primary);">${rec.bookId}</td>
+                    <td>${title}</td>
+                    <td style="font-weight:600;">${rec.studentId}</td>
+                    <td><span class="badge badge-issued">ISSUED</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+            event.target.classList.add("active");
+
+            document.getElementById("view-display").style.display = tab === "display" ? "block" : "none";
+            document.getElementById("view-add").style.display = tab === "add" ? "block" : "none";
+            document.getElementById("view-search").style.display = tab === "search" ? "block" : "none";
+            document.getElementById("view-circulation").style.display = tab === "circulation" ? "block" : "none";
+            document.getElementById("view-issued").style.display = tab === "issued" ? "block" : "none";
+
+            if (tab === "display") renderBooks();
+            if (tab === "issued") renderIssuedBooks();
+            if (tab === "search") handleSearch();
+        }
+
+        function handleAddBook(e) {
+            e.preventDefault();
+            const id = document.getElementById("add-id").value.trim();
+            const title = document.getElementById("add-title").value.trim();
+            const author = document.getElementById("add-author").value.trim();
+            const year = parseInt(document.getElementById("add-year").value);
+            const copies = parseInt(document.getElementById("add-copies").value);
+
+            if (books[id]) {
+                showToast(`Book ID '${id}' already exists!`, true);
+                return;
+            }
+
+            books[id] = { bookId: id, title, author, publicationYear: year, availableCopies: copies };
+            showToast(`Book '${title}' registered successfully!`);
+            e.target.reset();
+            renderBooks();
+        }
+
+        function handleSearch() {
+            const query = document.getElementById("search-input").value.trim().toLowerCase();
+            const tbody = document.getElementById("search-results-body");
+            tbody.innerHTML = "";
+
+            if (!query) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Start typing above to search...</td></tr>';
+                return;
+            }
+
+            const matches = Object.values(books).filter(b => 
+                b.bookId.toLowerCase().includes(query) || b.title.toLowerCase().includes(query)
+            );
+
+            if (matches.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--danger);">No books found matching query.</td></tr>';
+                return;
+            }
+
+            matches.forEach(b => {
+                const tr = document.createElement("tr");
+                const badgeClass = b.availableCopies > 0 ? "badge-available" : "badge-out";
+                const badgeText = b.availableCopies > 0 ? `Available (${b.availableCopies})` : "Out of Stock";
+                tr.innerHTML = `
+                    <td style="font-weight:600; color:var(--primary);">${b.bookId}</td>
+                    <td>${b.title}</td>
+                    <td>${b.author}</td>
+                    <td>${b.publicationYear}</td>
+                    <td>${b.availableCopies}</td>
+                    <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function handleIssueBook(e) {
+            e.preventDefault();
+            const bId = document.getElementById("issue-book-id").value.trim();
+            const sId = document.getElementById("issue-student-id").value.trim();
+
+            const book = books[bId];
+            if (!book) {
+                showToast(`Error: Book with ID '${bId}' does not exist.`, true);
+                return;
+            }
+            if (book.availableCopies <= 0) {
+                showToast(`Error: '${book.title}' is currently out of stock.`, true);
+                return;
+            }
+
+            const alreadyHas = issueRecords.some(r => r.bookId === bId && r.studentId === sId && r.status === "ISSUED");
+            if (alreadyHas) {
+                showToast(`Error: Student '${sId}' already has an active issue record for this book.`, true);
+                return;
+            }
+
+            book.availableCopies -= 1;
+            issueRecords.push({ bookId: bId, studentId: sId, status: "ISSUED" });
+            showToast(`Issued '${book.title}' to student '${sId}'.`);
+            e.target.reset();
+            updateStats();
+        }
+
+        function handleReturnBook(e) {
+            e.preventDefault();
+            const bId = document.getElementById("return-book-id").value.trim();
+            const sId = document.getElementById("return-student-id").value.trim();
+
+            const record = issueRecords.find(r => r.bookId === bId && r.studentId === sId && r.status === "ISSUED");
+            if (!record) {
+                showToast(`Error: No active issue record found for student '${sId}' and book '${bId}'.`, true);
+                return;
+            }
+
+            record.status = "RETURNED";
+            if (books[bId]) books[bId].availableCopies += 1;
+            showToast(`Book ID '${bId}' returned by student '${sId}'.`);
+            e.target.reset();
+            updateStats();
+        }
+
+        // Init
+        renderBooks();
+    </script>
+</body>
+</html>
